@@ -119,3 +119,80 @@
     @apply bg-background text-foreground;
   }
 }
+/* === FORCE3 Midnight Pulse palette overrides (append at end of globals.css) === */
+:root {
+  /* Surfaces */
+  --background: #0b0b0c;
+  --foreground: #e7e7ea;
+
+  /* Primary / Accent */
+  --primary: #3b82f6; /* Electric blue */
+  --primary-foreground: #0b0b0c;
+
+  --accent: #34d399;  /* Mint */
+  --accent-foreground: #08120e;
+
+  /* Status */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger:  #f43f5e;
+  --info:    #38bdf8;
+
+  /* Borders, rings, inputs */
+  --border: #23252a;
+  --input: #23252a;
+  --ring: #5b9dff;
+
+  /* Secondary/muted */
+  --muted: #121315;
+  --muted-foreground: #a6a8ad;
+
+  /* Sidebar (optional) */
+  --sidebar: #121315;
+  --sidebar-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+}
+
+.dark {
+  --background: #0b0b0c;
+  --foreground: #e7e7ea;
+
+  --primary: #3b82f6;
+  --primary-foreground: #0b0b0c;
+
+  --accent: #34d399;
+  --accent-foreground: #08120e;
+
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger:  #f43f5e;
+  --info:    #38bdf8;
+
+  --border: #23252a;
+  --input: #23252a;
+  --ring: #5b9dff;
+
+  --muted: #121315;
+  --muted-foreground: #a6a8ad;
+
+  --sidebar: #121315;
+  --sidebar-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+}
+/* === FORCE3 accent polish === */
+:root { --ring: color-mix(in oklab, var(--primary) 55%, transparent); }
+
+@layer base {
+  *:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  input[type="checkbox"], input[type="radio"], progress { accent-color: var(--primary); }
+}

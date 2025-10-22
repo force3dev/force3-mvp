@@ -246,11 +246,11 @@ function generatePlan(profile: Profile): WeekPlan[] {
 
 function getPlannedWeeklyMileage(profile: Profile, date = new Date()): number {
   const plans = generatePlan(profile);
-  const weekIdx = getWeekIndex(date);
+  const weekIdx = getWeekIndex({ date });
   const w = plans[Math.min(plans.length - 1, weekIdx)];
   return w?.weeklyMiles ?? 0;
 }
-function getWeekIndex(date = new Date()): number {
+function getWeekIndex({ date = new Date() }: { date?: Date; } = {}): number {
   // naive: 0..15 inside the 16-week block (just map current week-of-year % 16)
   const start = new Date(date.getFullYear(), 0, 1);
   const diff = (date.getTime() - start.getTime()) / (24 * 3600 * 1000);
