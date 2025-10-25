@@ -1,3 +1,7 @@
+import { Manrope, Space_Grotesk } from "next/font/google";
+
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
+const grotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-grotesk" });
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -23,12 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
+    <html lang="en" className={`${manrope.variable} ${grotesk.variable}`}>
+  <body className="bg-force-black text-force-white font-body">{children}</body>
+</html>
   );
 }

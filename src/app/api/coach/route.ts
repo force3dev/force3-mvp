@@ -38,6 +38,21 @@ type PostBody =
       brief?: boolean;
     };
 
+/* -------------------- Height options (cm / ft'in") -------------------- */
+const HEIGHT_OPTIONS: QuestionOption[] = [
+  { value: `150 cm / 4'11"`, label: `150 cm / 4'11"` },
+  { value: `155 cm / 5'1"`, label: `155 cm / 5'1"` },
+  { value: `160 cm / 5'3"`, label: `160 cm / 5'3"` },
+  { value: `165 cm / 5'5"`, label: `165 cm / 5'5"` },
+  { value: `170 cm / 5'7"`, label: `170 cm / 5'7"` },
+  { value: `175 cm / 5'9"`, label: `175 cm / 5'9"` },
+  { value: `180 cm / 5'11"`, label: `180 cm / 5'11"` },
+  { value: `185 cm / 6'1"`, label: `185 cm / 6'1"` },
+  { value: `190 cm / 6'3"`, label: `190 cm / 6'3"` },
+  { value: `195 cm / 6'5"`, label: `195 cm / 6'5"` },
+  { value: `200 cm / 6'7"`, label: `200 cm / 6'7"` },
+];
+
 /* -------------------- Questionnaire (GET) -------------------- */
 const QUESTIONNAIRE: Question[] = [
   { id: "name", type: "text", label: "Your name (optional)", placeholder: "Ricardo" },
@@ -53,6 +68,7 @@ const QUESTIONNAIRE: Question[] = [
       { value: "other", label: "Other / prefer not to say" },
     ],
   },
+
   { id: "age", type: "number", label: "Age", required: true, min: 12, max: 100 },
 
   {
@@ -65,13 +81,16 @@ const QUESTIONNAIRE: Question[] = [
       { value: "imperial", label: "Imperial (in, lb, mi)" },
     ],
   },
+
+  // ✅ Q5 → Height as dropdown (cm + inches)
   {
     id: "height",
-    type: "number",
-    label: "Height",
+    type: "select",
+    label: "What is your height?",
     required: true,
-    help: "Enter centimeters if metric, or inches if imperial.",
+    options: HEIGHT_OPTIONS,
   },
+
   {
     id: "weight",
     type: "number",
@@ -123,6 +142,7 @@ const QUESTIONNAIRE: Question[] = [
       { value: "advanced", label: "Advanced" },
     ],
   },
+
   {
     id: "availability",
     type: "number",
@@ -130,6 +150,33 @@ const QUESTIONNAIRE: Question[] = [
     required: true,
     min: 1,
     max: 7,
+  },
+
+  // ✅ Q14 → Exercise Frequency (capitalized)
+  {
+    id: "exercise_frequency",
+    type: "select",
+    label: "Exercise Frequency",
+    options: [
+      { value: "1-2", label: "1–2 times per week" },
+      { value: "3-4", label: "3–4 times per week" },
+      { value: "5-6", label: "5–6 times per week" },
+      { value: "every_day", label: "Every day" },
+    ],
+  },
+
+  // ✅ Q15 → Current Goal (capitalized + "Other")
+  {
+    id: "current_goal",
+    type: "select",
+    label: "Current Goal",
+    options: [
+      { value: "build_muscle", label: "Build Muscle" },
+      { value: "lose_fat", label: "Lose Fat" },
+      { value: "improve_endurance", label: "Improve Endurance" },
+      { value: "maintain_fitness", label: "Maintain Fitness" },
+      { value: "other", label: "Other" },
+    ],
   },
 
   {
@@ -184,6 +231,7 @@ const QUESTIONNAIRE: Question[] = [
       { value: "none", label: "Bodyweight only" },
     ],
   },
+
   {
     id: "constraints",
     type: "multi_choice",
@@ -209,6 +257,24 @@ const QUESTIONNAIRE: Question[] = [
     type: "text",
     label: "Recent cardio baseline (optional)",
     placeholder: "e.g., 3 mi easy ~10:00/mi; FTP 220W",
+  },
+
+  // ✅ Q18 → Diet Type (expanded)
+  {
+    id: "diet_type",
+    type: "select",
+    label: "Diet Type",
+    options: [
+      { value: "regular", label: "Regular" },
+      { value: "vegetarian", label: "Vegetarian" },
+      { value: "vegan", label: "Vegan" },
+      { value: "pescatarian", label: "Pescatarian" },
+      { value: "keto", label: "Keto" },
+      { value: "paleo", label: "Paleo" },
+      { value: "mediterranean", label: "Mediterranean" },
+      { value: "intermittent_fasting", label: "Intermittent Fasting" },
+      { value: "other", label: "Other" },
+    ],
   },
 
   {
@@ -253,29 +319,72 @@ Return VALID JSON with keys:
 
 PLANNING RULES:
 - Build plans ONLY for the modalities the user selected (strength, run, bike, swim, hiit, mobility, walk).
-- Match weekly volume and difficulty to experience + days/week.
+- Match weekly volume and difficulty to experience + days/week and exercise_frequency/current_goal.
 - Strength: follow preferred split (or choose sensible one). Replace excluded movements (e.g., if "no_deadlifts").
 - Cardio: include intensity guidance (RPE/HR or pace/watts if provided).
 - Mobility: add short sessions 2–5x/week.
-- Nutrition: include high-level guidance only if relevant.
+- Nutrition: include high-level guidance only if relevant, respect diet_type.
 - Respect preferred rest days.
 - Use user's units; state assumptions when unclear.
 - Always include actionable next steps.
 `;
 
 /* -------------------- Helpers -------------------- */
+function parseHeightMixed(value: any): { height_cm: number | null; height_text: string | null } {
+  if (value == null) return { height_cm: null, height_text: null };
+
+  // If number provided (older clients), assume cm
+  if (typeof value === "number") return { height_cm: value, height_text: `${value} cm` };
+
+  const str = String(value);
+
+  // Try to parse "### cm"
+  const cmMatch = str.match(/(\d{2,3})\s*cm/i);
+  if (cmMatch) {
+    const cm = Number(cmMatch[1]);
+    return { height_cm: isNaN(cm) ? null : cm, height_text: str };
+  }
+
+  // Try to parse feet'inches" e.g., 5'11"
+  const ftInMatch = str.match(/(\d)'\s*(\d{1,2})"?/);
+  if (ftInMatch) {
+    const ft = Number(ftInMatch[1]);
+    const inch = Number(ftInMatch[2]);
+    if (!isNaN(ft) && !isNaN(inch)) {
+      const totalIn = ft * 12 + inch;
+      const cm = Math.round(totalIn * 2.54);
+      return { height_cm: cm, height_text: str };
+    }
+  }
+
+  // Fallback, no parse
+  return { height_cm: null, height_text: str };
+}
+
 function mapAnswersToProfile(answers: Answers) {
+  const { height_cm, height_text } = parseHeightMixed(answers.height);
+
   return {
     name: answers.name || "Athlete",
     sex: answers.sex || "other",
     age: Number(answers.age) || null,
     units: answers.units || "metric",
-    height: Number(answers.height) || null,
+
+    // Height parsed from dropdown
+    height_cm,
+    height_text,
+
     weight: Number(answers.weight) || null,
     goals: answers.primary_goals || [],
     modalities: answers.modalities || [],
     experience: answers.experience || "beginner",
     weekly_availability: Number(answers.availability) || 3,
+
+    // New fields
+    exercise_frequency: answers.exercise_frequency || null,
+    current_goal: answers.current_goal || null,
+    diet_type: answers.diet_type || null,
+
     split_pref: answers.split_pref || "no_pref",
     cardio_intensity: answers.cardio_intensity || "no_pref",
     preferred_rest_days: answers.preferred_rest_days || [],
@@ -354,6 +463,7 @@ export async function POST(req: Request) {
         };
       }
 
+      // Return the plan object directly (frontend already handles both direct and {plan})
       return new Response(JSON.stringify(parsed), {
         status: 200,
         headers: { "Content-Type": "application/json" },
